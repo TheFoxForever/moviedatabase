@@ -18,24 +18,31 @@ func InitializeDatabase(dbPath string) {
 	defer db.Close()
 
 	createTables(db)
-	importActors(db, "actors.csv")
-	importDirectors(db, "directors.csv")
-	importDirectorsGenres(db, "directors_genres.csv")
-	importMovies(db, "movies.csv")
-	importMoviesGenre(db, "movies_genre.csv")
-	importRoles(db, "roles.csv")
+	fmt.Println("Tables created")
+	importActors(db, "IMDB/IMDB-actors.csv")
+	fmt.Println("Actors imported")
+	importDirectors(db, "IMDB/IMDB-directors.csv")
+	fmt.Println("Directors imported")
+	importDirectorsGenres(db, "IMDB/IMDB-directors_genres.csv")
+	fmt.Println("DirectorsGenres imported")
+	importMovies(db, "IMDB/IMDB-movies.csv")
+	fmt.Println("Movies imported")
+	importMoviesGenre(db, "IMDB/IMDB-movies_genres.csv")
+	fmt.Println("MoviesGenre imported")
+	importRoles(db, "IMDB/IMDB-roles.csv")
+	fmt.Println("Roles imported")
 }
 
 func createTables(db *sql.DB) {
 	tables := []string{
 		`CREATE TABLE IF NOT EXISTS Actors (
-            ActorID INTEGER PRIMARY KEY AUTOINCREMENT,
+            ActorID INTEGER PRIMARY KEY,
             FirstName TEXT NOT NULL,
             LastName TEXT NOT NULL,
             Gender TEXT
         );`,
 		`CREATE TABLE IF NOT EXISTS Directors (
-            DirectorID INTEGER PRIMARY KEY AUTOINCREMENT,
+            DirectorID INTEGER PRIMARY KEY,
             FirstName TEXT NOT NULL,
             LastName TEXT NOT NULL
         );`,
@@ -47,7 +54,7 @@ func createTables(db *sql.DB) {
             FOREIGN KEY (DirectorID) REFERENCES Directors(DirectorID)
         );`,
 		`CREATE TABLE IF NOT EXISTS Movies (
-            MovieID INTEGER PRIMARY KEY AUTOINCREMENT,
+            MovieID INTEGER PRIMARY KEY,
             Name TEXT NOT NULL,
             Year INTEGER,
             Rank REAL
@@ -84,30 +91,47 @@ func importCSV(db *sql.DB, csvFile string, insertSQL string) {
 	defer file.Close()
 
 	reader := csv.NewReader(file)
+	reader.LazyQuotes = true
 	records, err := reader.ReadAll()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	stmt, err := tx.Prepare(insertSQL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmt.Close()
 
 	for _, record := range records[1:] {
 		args := make([]interface{}, len(record))
 		for i, v := range record {
 			args[i] = v
 		}
-		_, err := db.Exec(insertSQL, args...)
+		_, err := stmt.Exec(args...)
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("Error inserting record: %v, Error: %v", record, err)
+			continue
 		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 
 func importActors(db *sql.DB, csvFile string) {
-	insertSQL := "INSERT INTO Actors (FirstName, LastName, Gender) VALUES (?, ?, ?)"
+	insertSQL := "INSERT INTO Actors (ActorID, FirstName, LastName, Gender) VALUES (?, ?, ?, ?)"
 	importCSV(db, csvFile, insertSQL)
 }
 
 func importDirectors(db *sql.DB, csvFile string) {
-	insertSQL := "INSERT INTO Directors (FirstName, LastName) VALUES (?, ?)"
+	insertSQL := "INSERT INTO Directors (DirectorID, FirstName, LastName) VALUES (?, ?, ?)"
 	importCSV(db, csvFile, insertSQL)
 }
 
@@ -117,7 +141,7 @@ func importDirectorsGenres(db *sql.DB, csvFile string) {
 }
 
 func importMovies(db *sql.DB, csvFile string) {
-	insertSQL := "INSERT INTO Movies (Name, Year, Rank) VALUES (?, ?, ?)"
+	insertSQL := "INSERT INTO Movies (MovieID, Name, Year, Rank) VALUES (?, ?, ?, ?)"
 	importCSV(db, csvFile, insertSQL)
 }
 

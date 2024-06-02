@@ -1,0 +1,10 @@
+# Impressions and explanation
+The first time the program is run, it builds the database (which is now included), and then it intializes the server hosting portion.
+The server utilizes the HTTP protocol on port 8080 just for simplicity.
+The http package made things very easy to stand up and cover the basic uses of hosting a database by including the 'q' parameter for query. GET request that do not include 'a' are given a 400 http error while internal errors are given 500 status errors like typical http servers. The sqlite package recommended allows a easy transition to Go from other ipmlementations.<br>
+
+This was a great project that was very similar to one of my first database projects when I learned Python so mapping out the database was fairly easy. The primary keys throughout the database are the DirectorID, MovieID, and ActorID. From there, you can map them to the directors genres, movie genres and roles. I had quite a bit of difficulty with the quotes in Movie names, but the 'lazy quotes' option in reading CSV helped me overcome that issue. </br>
+
+This database can be expanded by adding a table containing what movies you have and another table containing different platforms for the locations. The foreign key for location would be in the 'personal' table relating to different locationID's for digital locations as well as DVD and other media options. This would have the advantage to be combined with movies you've seen and make it easier to find movies within a genre or having certain actors that you want to see without getting results for movies you've already seen. <br>
+
+The data provided within the database can provide the foundation to at least a minimimal recommendation system. The actors, directors, genre, and rating can provide good recommendations for users based on how their ratings or movies they liked compared to others that have multiple matches with other movies.
